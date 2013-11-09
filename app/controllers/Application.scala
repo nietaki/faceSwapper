@@ -9,6 +9,7 @@ import java.io._
 import java.nio.file._
 import org.opencv.core._
 import org.opencv.highgui._
+import org.opencv.imgproc._
 import org.opencv.imgproc.Imgproc
 import scala.collection.JavaConversions._
 import scala.collection.mutable.ListBuffer
@@ -26,29 +27,30 @@ class Application(implicit inj: Injector) extends Controller with Injectable {
   }
   
   def showImage = Action {
-    val image = Utils.readFile("public/images/dog_owner.jpg")
     
-    val encodedImage = Utils.base64Encode(image)
-    var imageMat = new MatOfByte()
-    var encodedImageJavaList = Utils.toJavaByteList(image)
-    imageMat.fromList(encodedImageJavaList)
+    var baseImage = Utils.loadImage("public/images/dog_owner.jpg", Highgui.CV_LOAD_IMAGE_UNCHANGED)
+    var trollFace = Utils.loadImage("res/Transparent_Troll_Face_cropped.png", Highgui.CV_LOAD_IMAGE_UNCHANGED)
     
-    var decodedImage = Highgui.imdecode(imageMat, Highgui.CV_LOAD_IMAGE_COLOR);
-    
-    var faceDetections = genericfaceDetector.detectFaces(decodedImage)
+    var faceDetections = genericfaceDetector.detectFaces(baseImage)
 
     if(faceDetections.toArray.length == 0) {
       System.out.println("no detections!")
     }
+    var finalImage = baseImage.clone();
+    
     faceDetections.toArray.foreach( rect => {
-      Core.rectangle(decodedImage, new Point(rect.x, rect.y), new Point(rect.x + rect.width, rect.y + rect.height), new Scalar(0, 255, 0))
+      var smallface = new Mat();
+      //Imgproc.resize(trollFace,smallface, rect.size(), 0, 0, Imgproc.INTER_AREA);
+      Imgproc.resize(trollFace,smallface, new Size(10, 10), 0, 0, Imgproc.INTER_AREA);
+      Core.rectangle(baseImage, new Point(rect.x, rect.y), new Point(rect.x + rect.width, rect.y + rect.height), new Scalar(0, 255, 0))
+      Utils.overlayImage(baseImage, smallface, baseImage, new Point(30, 30))
     })
     
     var outputImage = new MatOfByte();
-    Highgui.imencode(".png", decodedImage, outputImage);
+    Highgui.imencode(".png", baseImage, outputImage);
     var outputBytes = outputImage.toArray();
 
-    Highgui.imwrite("highOutput.png", decodedImage)
+    Highgui.imwrite("highOutput.png", baseImage)
     //Ok(views.html.showImage(encodedImage))
     Ok(views.html.showImage(Utils.base64Encode(outputBytes)))
   }
