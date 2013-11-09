@@ -13,25 +13,29 @@ import org.opencv.imgproc.Imgproc
 import scala.collection.JavaConversions._
 import scala.collection.mutable.ListBuffer
 import org.opencv.objdetect.CascadeClassifier
+import processing._
+import scaldi.Injectable
+import scaldi.Injector
 
-object Application extends Controller {
-
+class Application(implicit inj: Injector) extends Controller with Injectable {
+  
+  val genericfaceDetector = inject [FaceDetector]
+  
   def index = Action {
     Ok(views.html.index("Your new application is ready."))
   }
   
   def showImage = Action {
-    val image = readFile("public/images/dog_owner.jpg")
-    val encodedImage = base64Encode(image)
+    val image = Utils.readFile("public/images/dog_owner.jpg")
+    
+    val encodedImage = Utils.base64Encode(image)
     var imageMat = new MatOfByte()
-    var encodedImageJavaList: java.util.List[java.lang.Byte] = ListBuffer(image.map(x => Byte.box(x)): _*)
+    var encodedImageJavaList = Utils.toJavaByteList(image)
     imageMat.fromList(encodedImageJavaList)
     
     var decodedImage = Highgui.imdecode(imageMat, Highgui.CV_LOAD_IMAGE_COLOR);
     
-    var faceDetections = new MatOfRect();
-    var faceDetector = new CascadeClassifier(Play.getFile("res/lbpcascade_frontalface.xml").getPath());
-    faceDetector.detectMultiScale(decodedImage, faceDetections)
+    var faceDetections = genericfaceDetector.detectFaces(decodedImage)
 
     if(faceDetections.toArray.length == 0) {
       System.out.println("no detections!")
@@ -39,20 +43,16 @@ object Application extends Controller {
     faceDetections.toArray.foreach( rect => {
       Core.rectangle(decodedImage, new Point(rect.x, rect.y), new Point(rect.x + rect.width, rect.y + rect.height), new Scalar(0, 255, 0))
     })
+    
+    var outputImage = new MatOfByte();
+    Highgui.imencode(".png", decodedImage, outputImage);
+    var outputBytes = outputImage.toArray();
 
     Highgui.imwrite("highOutput.png", decodedImage)
-    Ok(views.html.showImage(encodedImage))
+    //Ok(views.html.showImage(encodedImage))
+    Ok(views.html.showImage(Utils.base64Encode(outputBytes)))
   }
   
-  def readFile(relPath: String): Array[Byte] = {
-    val file = Play.getFile(relPath)
-    Files.readAllBytes(file.toPath())    
-  }
-  
-  def base64Encode(bytes: Array[Byte]): String = {
-    val bytes64 = Base64.encodeBase64(bytes)
-    new String(bytes64)
-    
-  }
+
 
 }

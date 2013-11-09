@@ -16,3 +16,6 @@ dist
 bin/
 .target/
 .cache
+.swp
+highOutput.png
+lib/*

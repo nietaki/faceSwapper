@@ -1,10 +1,20 @@
-import play.GlobalSettings;
-import play.Application;
-import org.opencv.core.Core;
+import org.opencv.core.Core
 
-class Global extends GlobalSettings {
+import modules.UserModule
+import play.api.Application
+import play.api.GlobalSettings
+import scaldi.play.ScaldiSupport
+
+object Global extends GlobalSettings with ScaldiSupport {
+  def applicationModule = new UserModule
+  
+  //override def getControllerInstance[A](controllerClass: Class[A]) = {
+  //  super[ScaldiSupport].getControllerInstance(controllerClass)
+  //}
+  //override def onStart(app: Application) = {
+  //  super[ScaldiSupport].onStart(app)
+  //}
   override def beforeStart(app: Application) {
-    // TODO Auto-generated method stub
     //super.beforeStart(app);
     super.beforeStart(app)
     //System.out.println(System.getProperty("java.library.path")); ///usr/java/packages/lib/amd64:/usr/lib/jni:/lib:/usr/lib
