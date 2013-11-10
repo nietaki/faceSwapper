@@ -5,7 +5,13 @@
 # Home page
 GET     /                           			@controllers.Application.index
 
-GET     /image                           	@controllers.Application.showImage
+GET     /demo															@controllers.Application.demo(filename = "la_hard.jpg")
+GET     /demo/:filename										@controllers.Application.demo(filename)
+
+GET			/service/*name                    @controllers.Application.service(name)
+GET			/serviceTest                    	@controllers.Application.serviceTest
 
 # Map static resources from the /public folder to the /assets URL path
-GET     /assets/*file               controllers.Assets.at(path="/public", file)
+GET     /assets/*file               			controllers.Assets.at(path="/public", file)
+GET			/results/*file                    @controllers.Application.at(path="/results", file)
+
