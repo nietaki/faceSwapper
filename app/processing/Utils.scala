@@ -62,4 +62,32 @@ object Utils {
   def getProportion(image: Mat) = {
     image.width().toDouble / image.height().toDouble
   }
+  
+  def safeOverlay(background: Mat, position: Rect, image: Mat, mask: Mat)  = {
+    val xover = max(position.br().x.toInt - background.width(), 0)
+    val yover = max(position.br().y.toInt - background.height(), 0)
+    
+    val xunder = max(0 - position.tl().x.toInt, 0)
+    val yunder = max(0 - position.tl().y.toInt, 0)
+    if(xover == 0 && yover == 0 && xunder == 0 && yunder == 0)  {
+      val bSubmat = background.submat(position)
+      assert(image.size() == mask.size())
+      assert(image.size() == bSubmat.size())
+      image.copyTo(bSubmat, mask)
+    } else {
+      image.adjustROI(-yunder, -yover, -xunder, -xover)
+      mask.adjustROI(-yunder, -yover, -xunder, -xover)
+      val correctedPosition = position.clone()
+      correctedPosition.width -= (xover + xunder)
+      correctedPosition.height-= (yover + yunder)
+      correctedPosition.x += xunder
+      correctedPosition.y += yunder
+      assert(image.size() == mask.size())
+      assert(correctedPosition.size() == mask.size())
+      
+      val bSubmat = background.submat(correctedPosition)
+      image.copyTo(bSubmat, mask)
+    }
+    //small.copyTo(bSubmat)
+  }
 }

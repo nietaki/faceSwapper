@@ -28,7 +28,8 @@ class Application(implicit inj: Injector) extends Controller with Injectable {
   
   def showImage = Action {
     
-    var baseImage = Utils.loadImage("public/images/la.jpg", Highgui.CV_LOAD_IMAGE_COLOR)
+    var baseImage = Utils.loadImage("public/images/la_hard.jpg", Highgui.CV_LOAD_IMAGE_COLOR)
+    //var baseImage = Utils.loadImage("public/images/dog_owner.jpg", Highgui.CV_LOAD_IMAGE_COLOR)
     var trollface = Utils.loadImage("res/Transparent_Troll_Face_ehnahced.jpg", Highgui.CV_LOAD_IMAGE_COLOR)
     var mask = Utils.loadImage("res/troll_cropped_mask.png", Highgui.CV_LOAD_IMAGE_GRAYSCALE)
     var small = Utils.loadImage("res/troll_small.jpg", Highgui.CV_LOAD_IMAGE_COLOR)
@@ -45,8 +46,7 @@ class Application(implicit inj: Injector) extends Controller with Injectable {
     var sortedFaces = faceDetections.toArray.sortBy(_.area())
     
     sortedFaces.toArray.foreach(rect => {
-      //TODO crop fixing - when trollfaces go out of picture
-      val multiplier = 1.3 * rect.height.toDouble / trollface.height.toDouble
+      val multiplier = 1.5 * rect.height.toDouble / trollface.height.toDouble
       
       val midX: Int = ((rect.tl().x + rect.br().x)/2.0).toInt
       val midY: Int = ((rect.tl().y + rect.br().y)/2.0).toInt
@@ -61,12 +61,11 @@ class Application(implicit inj: Injector) extends Controller with Injectable {
       val smallmask = new Mat()
       val modrect = new Rect(tlX, tlY, width, height)
       //Imgproc.resize(trollface, smallface, rect.size() , 0, 0, Imgproc.INTER_LINEAR)
-      Imgproc.resize(trollface, smallface, modrect.size() , 0, 0, Imgproc.INTER_CUBIC)
-      Imgproc.resize(mask, smallmask, modrect.size() , 0, 0, Imgproc.INTER_CUBIC)
+      Imgproc.resize(trollface, smallface, modrect.size() , 0, 0, Imgproc.INTER_LINEAR)
+      Imgproc.resize(mask, smallmask, modrect.size() , 0, 0, Imgproc.INTER_LINEAR)
       //var bSubmat = baseImage.submat(10, small.rows() + 10, 10, small.cols() + 10)
-      var bSubmat = baseImage.submat(modrect)
-      //small.copyTo(bSubmat)
-      smallface.copyTo(bSubmat, smallmask)
+      
+      Utils.safeOverlay(baseImage, modrect, smallface, smallmask)
     })
     /*
     
