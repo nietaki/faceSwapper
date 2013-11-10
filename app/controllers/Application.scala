@@ -28,24 +28,43 @@ class Application(implicit inj: Injector) extends Controller with Injectable {
   
   def showImage = Action {
     
-    var baseImage = Utils.loadImage("public/images/dog_owner.jpg", Highgui.CV_LOAD_IMAGE_UNCHANGED)
-    var trollFace = Utils.loadImage("res/Transparent_Troll_Face_cropped.png", Highgui.CV_LOAD_IMAGE_UNCHANGED)
+    var baseImage = Utils.loadImage("public/images/dog_owner.jpg", Highgui.CV_LOAD_IMAGE_COLOR)
+    var trollface = Utils.loadImage("res/Transparent_Troll_Face_ehnahced.jpg", Highgui.CV_LOAD_IMAGE_COLOR)
+    var small = Utils.loadImage("res/troll_small.jpg", Highgui.CV_LOAD_IMAGE_COLOR)
     
+    assert(baseImage.channels() == trollface.channels())
+    assert(baseImage.depth() == trollface.depth())
     var faceDetections = genericfaceDetector.detectFaces(baseImage)
 
     if(faceDetections.toArray.length == 0) {
       System.out.println("no detections!")
     }
-    var finalImage = baseImage.clone();
+    for(i <- 0 to 1){
+      
+      var bSubmat = baseImage.submat(10, small.rows() + 10, 10, small.cols() + 10)
+      small.copyTo(bSubmat)
+      Core.rectangle(bSubmat, new Point(10, 10), new Point(20, 20), new Scalar(255,0,0))
+      Core.rectangle(baseImage, new Point(10, 10), new Point(20, 20), new Scalar(255,0,0))
+    }
+    /*
     
+    var smallface = new Mat();
+    var otherRect: Rect = new Rect(10, 10, 150, 150)
+    var target2 = baseImage.submat(otherRect)
     faceDetections.toArray.foreach( rect => {
-      var smallface = new Mat();
-      //Imgproc.resize(trollFace,smallface, rect.size(), 0, 0, Imgproc.INTER_AREA);
-      Imgproc.resize(trollFace,smallface, new Size(10, 10), 0, 0, Imgproc.INTER_AREA);
+      //Imgproc.resize(trollface,smallface, rect.size(), 0, 0, Imgproc.INTER_AREA);
+      Imgproc.resize(trollface,smallface, new Size(2,2), 0, 0, Imgproc.INTER_AREA)
+      var target = baseImage.submat(rect)
+      //var target = new Mat(baseImage, rect)
+      System.out.println(target)
+      System.out.println(smallface)
+      smallface.copyTo(target)
+      otherRect = rect;
       Core.rectangle(baseImage, new Point(rect.x, rect.y), new Point(rect.x + rect.width, rect.y + rect.height), new Scalar(0, 255, 0))
-      Utils.overlayImage(baseImage, smallface, baseImage, new Point(30, 30))
+      Core.rectangle(target, new Point(rect.x, rect.y), new Point(rect.x + rect.width, rect.y + rect.height), new Scalar(255, 0, 0))
+      //Utils.overlayImage(baseImage, smallface, baseImage, new Point(30, 30))
     })
-    
+    */
     var outputImage = new MatOfByte();
     Highgui.imencode(".png", baseImage, outputImage);
     var outputBytes = outputImage.toArray();
