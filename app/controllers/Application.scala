@@ -28,10 +28,12 @@ class Application(implicit inj: Injector) extends Controller with Injectable {
   
   def showImage = Action {
     
-    var baseImage = Utils.loadImage("public/images/dog_owner.jpg", Highgui.CV_LOAD_IMAGE_COLOR)
+    var baseImage = Utils.loadImage("public/images/la.jpg", Highgui.CV_LOAD_IMAGE_COLOR)
     var trollface = Utils.loadImage("res/Transparent_Troll_Face_ehnahced.jpg", Highgui.CV_LOAD_IMAGE_COLOR)
+    var mask = Utils.loadImage("res/troll_cropped_mask.png", Highgui.CV_LOAD_IMAGE_GRAYSCALE)
     var small = Utils.loadImage("res/troll_small.jpg", Highgui.CV_LOAD_IMAGE_COLOR)
     
+    var trollProportion = Utils.getProportion(trollface)
     assert(baseImage.channels() == trollface.channels())
     assert(baseImage.depth() == trollface.depth())
     var faceDetections = genericfaceDetector.detectFaces(baseImage)
@@ -39,13 +41,33 @@ class Application(implicit inj: Injector) extends Controller with Injectable {
     if(faceDetections.toArray.length == 0) {
       System.out.println("no detections!")
     }
-    for(i <- 0 to 1){
+    
+    var sortedFaces = faceDetections.toArray.sortBy(_.area())
+    
+    sortedFaces.toArray.foreach(rect => {
+      //TODO crop fixing - when trollfaces go out of picture
+      val multiplier = 1.3 * rect.height.toDouble / trollface.height.toDouble
       
-      var bSubmat = baseImage.submat(10, small.rows() + 10, 10, small.cols() + 10)
-      small.copyTo(bSubmat)
-      Core.rectangle(bSubmat, new Point(10, 10), new Point(20, 20), new Scalar(255,0,0))
-      Core.rectangle(baseImage, new Point(10, 10), new Point(20, 20), new Scalar(255,0,0))
-    }
+      val midX: Int = ((rect.tl().x + rect.br().x)/2.0).toInt
+      val midY: Int = ((rect.tl().y + rect.br().y)/2.0).toInt
+      
+      val width: Int = (multiplier * trollface.width).toInt
+      val height = (multiplier * trollface.height).toInt 
+      
+      val tlX = midX - width/2
+      val tlY = midY - height/2
+      
+      val smallface = new Mat()
+      val smallmask = new Mat()
+      val modrect = new Rect(tlX, tlY, width, height)
+      //Imgproc.resize(trollface, smallface, rect.size() , 0, 0, Imgproc.INTER_LINEAR)
+      Imgproc.resize(trollface, smallface, modrect.size() , 0, 0, Imgproc.INTER_CUBIC)
+      Imgproc.resize(mask, smallmask, modrect.size() , 0, 0, Imgproc.INTER_CUBIC)
+      //var bSubmat = baseImage.submat(10, small.rows() + 10, 10, small.cols() + 10)
+      var bSubmat = baseImage.submat(modrect)
+      //small.copyTo(bSubmat)
+      smallface.copyTo(bSubmat, smallmask)
+    })
     /*
     
     var smallface = new Mat();

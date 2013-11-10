@@ -59,4 +59,7 @@ object Utils {
       }
     }
   }
+  def getProportion(image: Mat) = {
+    image.width().toDouble / image.height().toDouble
+  }
 }
