@@ -2,3 +2,5 @@ To get faceSwapper working you need to include OpenCV Java libraries, as per htt
 
 That means compiling OpenCV with all the necessary dependencies, adding a .jar to the project and placing a .so in a directory reachable by the app.
 
+Sample result:
+![invading friends' privacy](results/trolle1.jpg)
